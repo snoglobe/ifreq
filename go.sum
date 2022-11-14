@@ -1,0 +1,4 @@
+github.com/gordonklaus/portaudio v0.0.0-20221027163845-7c3b689db3cc h1:yYLpN7bJxKYILKnk20oczGQOQd2h3/7z7/cxdD9Se/I=
+github.com/gordonklaus/portaudio v0.0.0-20221027163845-7c3b689db3cc/go.mod h1:WY8R6YKlI2ZI3UyzFk7P6yGSuS+hFwNtEzrexRyD7Es=
+github.com/mkb218/gosndfile v0.0.0-20171006180803-e0c9ef895ee2 h1:VxuHU1GzpitRcSRQLMsYzmiR4AWli0ZIAwuay3nAdng=
+github.com/mkb218/gosndfile v0.0.0-20171006180803-e0c9ef895ee2/go.mod h1:Bt3M0pOPhXFJld5U1F484ASifG9E1Tych5ukWdGXnxw=
