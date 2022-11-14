@@ -30,7 +30,7 @@ func main() {
 	}
 
 	// contact peers and see if they have more peers to share
-	peers = config.Peers()
+	/*peers = config.Peers()
 	for _, peer := range peers {
 		peerContact := NewRequest(RequestPeers, nil)
 		peerResponse := SendRequest(peerContact, peer.IP(), peer.Port())
@@ -44,11 +44,14 @@ func main() {
 				peers = append(peers, peerPeer)
 			}
 		}
-	}
+	}*/
 
 	defer config.Save("config.json")
 
 	// server or client mode
+	if len(os.Args) == 1 {
+		log.Fatal("insufficient arguments")
+	}
 	switch os.Args[1] {
 	case "server":
 		server()
@@ -74,6 +77,9 @@ func server() {
 
 	// load station config
 	station, err := LoadStationConfig("station.json")
+	if err != nil {
+		log.Fatal(err)
+	}
 	info = station
 
 	// start tcp server
@@ -103,6 +109,8 @@ func server() {
 			files <- f
 		}(file)
 	}
+
+	go BeginStream(files)
 
 	for {
 		conn, err := ln.Accept()

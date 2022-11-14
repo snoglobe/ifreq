@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 	"net"
 	"strconv"
 )
@@ -90,6 +91,7 @@ func (r *Response) UnmarshalJSON(data []byte) error {
 }
 
 func SendRequest(req *Request, ip net.IP, port uint16) *Response {
+	log.Printf("sending request of type %d with payload %v to %s:%d", req.Type(), req.payload, ip, port)
 	reqData, _ := json.Marshal(req)
 
 	conn, err := net.Dial("tcp", ip.String()+":"+strconv.Itoa(int(port)))
@@ -108,6 +110,8 @@ func SendRequest(req *Request, ip net.IP, port uint16) *Response {
 	if err != nil {
 		return NewResponse(err.Error(), false)
 	}
+
+	println(respData.String())
 
 	resp := &Response{}
 	err = json.Unmarshal(respData.Bytes(), resp)

@@ -10,6 +10,7 @@ import (
 )
 
 func ConnectPeer(peer *Station, end chan int) {
+	portaudio.Initialize()
 	conn, err := net.Dial("tcp", peer.IP().String()+":"+strconv.Itoa(int(peer.Port())))
 	if err != nil {
 		log.Fatal(err)
@@ -21,7 +22,7 @@ func ConnectPeer(peer *Station, end chan int) {
 	getStream := NewRequest(RequestStream, nil)
 	response := SendRequest(getStream, peer.IP(), peer.Port())
 	if !response.Success() {
-		log.Fatal("failed to get streamIpPort - " + response.Payload().(string))
+		log.Fatal("failed to get stream - " + response.Payload().(string))
 	}
 	streamIpPort := response.Payload().(string)
 	conn.Close()
@@ -34,11 +35,11 @@ func ConnectPeer(peer *Station, end chan int) {
 	buffer := make([]int32, sampleRate*seconds)
 
 	// open portaudio output
-	stream, err := portaudio.OpenDefaultStream(0, 2, 44100, 1024, func(out []int32) {
+	stream, err := portaudio.OpenDefaultStream(0, 1, sampleRate, sampleRate*seconds, func(out []int32) {
 		// read from stream
 		err := binary.Read(conn, binary.LittleEndian, &buffer)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("read error: " + err.Error())
 		}
 		// write to portaudio
 		for i := 0; i < len(buffer); i++ {

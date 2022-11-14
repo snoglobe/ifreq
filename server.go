@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"strconv"
-	"time"
 )
 
 var info StationInfo
@@ -15,34 +14,28 @@ var info StationInfo
 const sampleRate = 32000
 const seconds = 1
 
-func BeginStream(file chan sndfile.File) {
+func BeginStream(file chan *sndfile.File) {
 	buffer := make([]int32, sampleRate*seconds)
 
-	listen, err := net.Listen("tcp", config.Bind().String()+":"+string(rune(config.Port()+1)))
+	log.Println("starting stream on port " + strconv.Itoa(config.Port()+1))
+
+	listen, err := net.Listen("tcp", config.Bind().String()+":"+strconv.Itoa(config.Port()+1))
 	if err != nil {
 		panic(err)
 	}
 	defer listen.Close()
 
 	go func() {
-		ticker := time.NewTicker(time.Second / sampleRate)
 		for {
 			select {
 			case f := <-file:
-				for {
-					select {
-					case <-ticker.C:
-						_, err := f.ReadFrames(buffer)
-						if err != nil {
-							break
-						}
-					}
+				_, err := f.ReadFrames(buffer)
+				if err != nil {
+					break
 				}
 			}
 		}
 	}()
-
-	log.Println("starting stream on port " + strconv.Itoa(config.Port()+1))
 
 	for {
 		conn, err := listen.Accept()
@@ -50,8 +43,9 @@ func BeginStream(file chan sndfile.File) {
 			panic(err)
 		}
 		go func(conn net.Conn) {
-			defer conn.Close()
-			binary.Write(conn, binary.LittleEndian, &buffer)
+			for {
+				binary.Write(conn, binary.LittleEndian, &buffer)
+			}
 		}(conn)
 	}
 }
@@ -66,16 +60,25 @@ func HandleConnection(conn net.Conn) {
 
 	switch req.Type() {
 	case RetrieveInfo:
-		data, _ := json.Marshal(Response{
-			payload: info,
+		println(info.String())
+		data, _ := json.Marshal(&Response{
+			payload: &info,
+			success: true,
+		})
+		println(string(data))
+		_, err := conn.Write(data)
+		if err != nil {
+			return
+		}
+	case RequestStream:
+		data, _ := json.Marshal(&Response{
+			payload: config.Bind().String() + ":" + strconv.Itoa(config.Port()+1),
 			success: true,
 		})
 		_, err := conn.Write(data)
 		if err != nil {
 			return
 		}
-	case RequestStream:
-		// TODO
 	case RequestPeers:
 		data, _ := json.Marshal(Response{
 			payload: peers,

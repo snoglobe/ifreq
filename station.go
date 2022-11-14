@@ -52,6 +52,14 @@ func (s *StationInfo) String() string {
 	return fmt.Sprintf("%s: %s - %s | %s: %s", s.name, s.media.artist, s.media.title, s.media.album, s.media.albumArt.String())
 }
 
+func (s *StationInfo) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"name":        s.name,
+		"media":       s.media,
+		"runningTime": s.runningTime,
+	})
+}
+
 func (s *Media) MarshalJSON() ([]byte, error) {
 	return json.Marshal(map[string]any{
 		"mediaType": s.mediaType,
@@ -101,7 +109,21 @@ func (s *Station) String() string {
 func (s *Station) StationInfo() StationInfo {
 	req := SendRequest(NewRequest(RetrieveInfo, nil), s.ip, s.port)
 	if req.Success() {
-		return req.Payload().(StationInfo)
+		var info StationInfo
+		payload := req.Payload().(map[string]any)
+		info.name = payload["name"].(string)
+		info.runningTime = uint32(payload["runningTime"].(float64))
+		urlData, _ := json.Marshal(payload["media"].(map[string]any)["albumArt"].(map[string]any))
+		url := url.URL{}
+		json.Unmarshal(urlData, &url)
+		info.media = &Media{
+			MediaType(payload["media"].(map[string]any)["mediaType"].(float64)),
+			payload["media"].(map[string]any)["artist"].(string),
+			payload["media"].(map[string]any)["title"].(string),
+			payload["media"].(map[string]any)["album"].(string),
+			url,
+		}
+		return info
 	}
 	panic(req.payload.(string))
 }
